@@ -1,5 +1,5 @@
 import Header from "./components/Header";
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Tasks from "./components/Tasks"
 import AddTask from "./components/AddTask";
 
@@ -8,42 +8,48 @@ function App() {
 
   const [showAddTask, setShowAddTask] = useState(false)
 
-  const [tasks, setTasks] = useState(
-    [
-           {
-             id: 1,
-             text: 'Meeting at school',
-             day: '2022-01-10T17:30:31.098Z',
-             reminder: true
-           },
-           {
-             id: 2,
-             text: 'Writing javascript',
-             day: '2022-01-10T18:39:34.091Z',
-             reminder: false
-           },
-           {
-             id: 3,
-             text: 'Learn Nodejs',
-             day: '2022-01-10T19:20:14.298Z',
-             reminder: true
-           }
-   ]
-       
-    )
+  const [tasks, setTasks] = useState([])
+
+  useEffect(() => {
+    const getData = async() => {
+      const tasksFromServer = await fetchTasks()
+      setTasks(tasksFromServer)
+    }
+    getData()
+  }, [])
+
+  // fetching data
+  const fetchTasks = async () => {
+      const res = await fetch('http://localhost:5000/tasks')
+
+      const data = await res.json()
+
+      return data
+    }
+
    // adding items
 
-   const onAdd = (text) => {
-    const id = Math.floor(Math.random()*1000) + 1
-    
-    const newTask = {id, ...text}
+   const onAdd = async (task) => {
+    const res = await fetch('http://localhost:5000/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json',
+      },
+      body: JSON.stringify(task),
+    }) 
 
-    setTasks([...tasks, newTask])
+    const data = await res.json()
+    setTasks([...tasks, data])
    }
   
   
     //For deleting items
-    const deleteTask = (id) => {
+    const deleteTask = async (id) => {
+
+      await fetch (`http://localhost:5000/tasks/${id}`, {
+        method: 'DELETE',
+      })
+
       setTasks(tasks.filter((task) => task.id !== id))
     }
 
@@ -57,7 +63,7 @@ function App() {
 
   return (
     <div className="container">
-    <Header  onAdd={() => setShowAddTask(!showAddTask)}/>
+    <Header  onAdd={() => setShowAddTask(!showAddTask)} showAdd = {showAddTask}/>
 
    {showAddTask && <AddTask  onAdd = {onAdd}/>}
 
